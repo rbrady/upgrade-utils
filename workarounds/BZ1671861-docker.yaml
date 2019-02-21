@@ -1,0 +1,40 @@
+---
+pre_overcloud_upgrade_prepare_workarounds:
+- RHBZ-1657138:
+    patch: false
+    basedir: ''
+    id: ''
+    command: |
+        echo "Workaround for docker issue, pin to docker-1.13.1-93.gitb2f74b2.el7"
+
+        source {{ undercloud_rc }} ;
+        tripleo-ansible-inventory --static-yaml-inventory /tmp/workarounds-inventory.yml \
+            --stack {{ overcloud_stack_name }} ;
+        # install version lock
+        ansible -i /tmp/workarounds-invenroy.yml overcloud -b -m shell \
+			      -a 'sudo yum install -y yum-versionlock' ;
+		    # get version from brew
+        ansible -i /tmp/workarounds-inventory.yml overcloud -b -m shell \
+            -a 'wget http://download.eng.bos.redhat.com/brewroot/vol/rhel-7/packages/docker/1.13.1/93.gitb2f74b2.el7/x86_64/docker-rhel-push-plugin-1.13.1-93.gitb2f74b2.el7.x86_64.rpm' ;
+        ansible -i /tmp/workarounds-inventory.yml overcloud -b -m shell \
+            -a 'wget http://download.eng.bos.redhat.com/brewroot/vol/rhel-7/packages/docker/1.13.1/93.gitb2f74b2.el7/x86_64/docker-common-1.13.1-93.gitb2f74b2.el7.x86_64.rpm' ;
+        ansible -i /tmp/workarounds-inventory.yml overcloud -b -m shell \
+            -a 'wget http://download.eng.bos.redhat.com/brewroot/vol/rhel-7/packages/docker/1.13.1/93.gitb2f74b2.el7/x86_64/docker-client-1.13.1-93.gitb2f74b2.el7.x86_64.rpm' ;
+        ansible -i /tmp/workarounds-inventory.yml overcloud -b -m shell \
+            -a 'wget http://download.eng.bos.redhat.com/brewroot/vol/rhel-7/packages/docker/1.13.1/93.gitb2f74b2.el7/x86_64/docker-1.13.1-93.gitb2f74b2.el7.x86_64.rpm' ;
+        # install version from brew
+        ansible -i /tmp/workarounds-inventory.yml overcloud -b -m shell \
+            -a 'sudo rpm -ivh --force docker-rhel-push-plugin-1.13.1-93.gitb2f74b2.el7.x86_64.rpm' ;
+        ansible -i /tmp/workarounds-inventory.yml overcloud -b -m shell \
+            -a 'sudo rpm -ivh --force docker-common-1.13.1-93.gitb2f74b2.el7.x86_64.rpm' ;
+        ansible -i /tmp/workarounds-inventory.yml overcloud -b -m shell \
+            -a 'sudo rpm -ivh --force docker-client-1.13.1-93.gitb2f74b2.el7.x86_64.rpm' ;
+        ansible -i /tmp/workarounds-inventory.yml overcloud -b -m shell \
+            -a 'sudo rpm -ivh --force docker-1.13.1-93.gitb2f74b2.el7.x86_64.rpm' ;
+
+        # restart docker
+        ansible -i /tmp/workarounds-invenroy.yml overcloud -b -m shell \
+            -a 'sudo systemctl restart docker ; sudo systemctl status docker ; sudo docker version ; date'
+        # version lock docker
+        ansible -i /tmp/workarounds-invenroy.yml overcloud -b -m shell \
+            -a 'sudo yum versionlock add docker*' ;
